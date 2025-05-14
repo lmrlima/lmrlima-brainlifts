@@ -1,0 +1,71 @@
+# EMS Retry Mechanism - BrainLift DOK Summary
+
+- DOK3 - Insights
+  - The EMS system uses two distinct retry mechanisms (cloud-specific and general) that operate independently but serve the same ultimate purpose, showing a pattern of specialized error handling based on message origin
+  - The date-based retry directory structure is an intentional design choice that enables time-based scheduling of retries rather than a simple queue, allowing for exponential backoff strategies
+  - Pipeline failures are treated differently from message-specific failures, indicating a system design that distinguishes between infrastructure issues and data issues
+  - The inheritance chain (StorageImporter → MessageImporter → AbstractMessageImporter) demonstrates a pattern of increasing specialization with shared core functionality
+
+- DOK2 - Knowledge Tree
+  - Message Processing Architecture
+    - Source: Pipeline Implementation
+      - DOK1 - facts
+        - The system uses a pipeline architecture defined with `PipelineBuilder`
+        - `StorageImporter` defines its pipeline in `buildPipeline()` method
+        - The pipeline includes stages like `ParseEnvelopeStage`, `ResolveCustomerStage`, and `AssignPartitionStage`
+        - `ThreadedStageController` manages the execution of pipeline stages
+      - DOK2 - summary
+        - The pipeline architecture allows for modular message processing with specialized stages for different tasks
+        - Each stage in the pipeline can throw exceptions that are caught and handled by the framework
+        - The `AssignPartitionStage` is where the NullPointerException occurred during partition assignment
+      - link to source: [StorageImporter.java](https://github.com/trilogy-group/versata-m1.ems/blob/main/core/moduleEmsCore/src/main/java/com/m1/ems/commandline/activemailbox/importer/StorageImporter.java)
+
+  - Retry Mechanisms
+    - Cloud-Specific Retry
+      - Source: CloudMessageConverter Implementation
+        - DOK1 - facts
+          - Uses path structure: `/ems/bigdisk/journal/retry/[GUID]/`
+          - Implemented in `CloudMessageConverter.retryMessage()`
+          - Tracks retry count and next retry datetime in context files
+        - DOK2 - summary
+          - Specialized for cloud-sourced messages with unique requirements
+          - Uses GUID-based organization rather than time-based
+        - link to source: [CloudMessageConverter.java](https://github.com/trilogy-group/versata-m1.ems/blob/main/core/moduleEmsCore/src/main/java/com/m1/ems/commandline/activemailbox/importer/cloud/CloudMessageConverter.java)
+
+    - General Message Retry
+      - Source: MessageImporter Implementation
+        - DOK1 - facts
+          - Uses path structure: `/ems/bigdisk/retry/YYYY-MM-DD-HH/`
+          - Implemented in `MessageImporter.importFailed()`
+          - Generates log: `Message placed in retry queue with X consecutive failures`
+          - Creates directories with format `RETRY_DATE_PATH_FORMAT`
+        - DOK2 - summary
+          - Time-based retry mechanism allows for scheduled processing
+          - Differentiates between pipeline failures and message failures
+          - Pipeline failures are always retried regardless of count
+          - Message failures are retried only if under configured limit
+        - link to source: [MessageImporter.java](https://github.com/trilogy-group/versata-m1.ems/blob/main/core/moduleEmsCore/src/main/java/com/m1/ems/commandline/activemailbox/importer/MessageImporter.java)
+
+  - Error Handling Flow
+    - Source: Exception Processing Chain
+      - DOK1 - facts
+        - Exceptions caught in `AbstractMessageImportStage.process()`
+        - `failMessage()` adds errors to message context
+        - `importFailed()` determines retry strategy
+        - Error configuration determines retry behavior
+      - DOK2 - summary
+        - Sophisticated error handling with multiple layers of abstraction
+        - Error categorization affects retry behavior
+        - System maintains error history for diagnostic purposes
+      - link to source: [AbstractMessageImportStage.java](https://github.com/trilogy-group/versata-m1.ems/blob/main/core/moduleEmsCore/src/main/java/com/m1/ems/commandline/activemailbox/importer/AbstractMessageImportStage.java)
+
+  - File Naming Conventions
+    - Source: Message File Extensions
+      - DOK1 - facts
+        - Files use extension `.m1.gzip.enc.done.ftp`
+        - Defined as constant: `FTP_ENCRYPTED_DONE_NAME`
+        - Extensions indicate processing state and format
+      - DOK2 - summary
+        - Naming convention encodes multiple pieces of metadata about the file
+        - Extensions track the processing history of the message
+      - link to source: [MessageImporter.java](https://github.com/trilogy-group/versata-m1.ems/blob/main/core/moduleEmsCore/src/main/java/com/m1/ems/commandline/activemailbox/importer/MessageImporter.java)
