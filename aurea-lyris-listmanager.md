@@ -1,0 +1,34 @@
+- DOK3 - Insights
+  - Lyris ListManager's bounce handling system is designed with a deliberate distinction between hard and soft bounces, with immediate action taken for hard bounces regardless of configured bounce limits
+  - The immediate hold for DNS failures is an intentional design choice aligned with email industry best practices, not a bug
+  - The system provides configuration options to control automatic holds, suggesting the designers anticipated scenarios where this behavior might not be desired
+
+- DOK2 - Knowledge Tree
+  - Bounce Handling Implementation
+    - Source: Code analysis of Lyris ListManager
+      - DOK1 - facts
+        - The system categorizes bounces into hard bounces (2xxx status codes) and soft bounces (3xxx status codes)
+        - Hard bounces trigger immediate member holds regardless of bounce count via the code: `if (status / 1000 == 2) { putMemberOnHold(SqlWorkerArgs->MemberID); }`
+        - Permanent DNS failures are classified as hard bounces (likely status code 2002)
+        - Bounce events are logged in the `lyrMemberBounceLog` table
+        - The `putMemberOnHold` function updates member status to 'held' in the database
+      - DOK2 - summary
+        - The bounce handling logic shows a clear design decision to treat hard bounces as serious enough to warrant immediate action
+        - The system includes safety mechanisms through configuration options that can prevent automatic holds
+    - Source: Analysis of bounce handling rationale
+      - DOK1 - facts
+        - Email addresses with unresolvable domains are technically invalid and cannot receive email
+        - DNS failures categorized as permanent have typically gone through multiple retry attempts
+        - Email marketing best practices recommend immediately removing addresses with permanent DNS failures
+      - DOK2 - summary
+        - Immediate holds for DNS failures protect sender reputation and optimize system resources
+        - This approach aligns with industry standards including CAN-SPAM compliance and deliverability best practices
+  - Configuration Options
+    - Source: Code analysis of hold prevention mechanisms
+      - DOK1 - facts
+        - The system checks `CleanAuto_` settings at both list and member level
+        - There's a global `DisableMemberHolds` setting in `lyrConfigClusterSettings`
+        - The code includes conditions: `AND l.CleanAuto_ = 'F' AND m.CleanAuto_ = 'F'` and `JOIN lyrConfigClusterSettings ccs ON ccs.DisableMemberHolds = 'F'`
+      - DOK2 - summary
+        - These configuration options provide flexibility for customers who may not want automatic holds
+        - Rather than changing core bounce handling logic, these settings should be used to control unwanted holds

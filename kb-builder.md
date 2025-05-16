@@ -1,0 +1,72 @@
+# KB-Builder BrainLift
+
+- DOK3 - Insights
+  - Environment-specific configuration in serverless applications requires careful handling of environment variables, especially when local development and Lambda runtime environments differ
+  - Debugging webhook integrations between multiple services requires detailed logging at each step of the process
+  - When integrating third-party services like Read.AI, the authentication flow and API interaction points are critical junctures that need robust error handling and logging
+  - Lambda functions should have environment-specific configurations hardcoded in the CDK stack rather than relying solely on environment variables loaded during deployment
+
+- DOK2 - Knowledge Tree
+  - Environment Configuration
+    - Source: Configuration System
+      - DOK1 - facts
+        - The application uses dotenv to load environment variables from .env files
+        - Configuration priority: .env.local (highest) > .env.{NODE_ENV} > .env (lowest)
+        - Environment variables are loaded differently in local development vs Lambda runtime
+        - The Lambda function environment is configured during CDK deployment
+      - DOK2 - summary
+        - The configuration system needs to detect whether it's running in a Lambda environment and skip loading .env files in that case
+        - For Lambda, environment variables must be explicitly set in the CDK stack
+        - The llima environment is specifically configured to use DEBUG level logging
+      - link to source: https://github.com/trilogy-group/kb-builder/blob/main/src/config.ts
+
+  - Logging System
+    - Source: Logging Implementation
+      - DOK1 - facts
+        - The application uses a custom logging utility with multiple log levels: DEBUG, INFO, WARN, ERROR
+        - Log level is configurable via the LOG_LEVEL environment variable
+        - Logs follow a structured format: "SERVICE | ACTION | KEY: value"
+        - Debug logs include detailed information about API requests, responses, and errors
+      - DOK2 - summary
+        - Enhanced logging is critical for debugging webhook integrations and API interactions
+        - The DEBUG log level provides visibility into the entire flow of data through the system
+        - Structured logging makes it easier to filter and analyze logs in CloudWatch
+      - link to source: https://github.com/trilogy-group/kb-builder/blob/main/src/utils.ts
+
+  - Read.AI Integration
+    - Source: Read.AI Service
+      - DOK1 - facts
+        - Read.AI is added to meetings when they start, not when they're created
+        - The integration uses the Read.AI API to add the service to meetings and share reports
+        - Authentication with Read.AI requires email/password credentials
+        - Read.AI sends webhooks to the application when reports are ready
+      - DOK2 - summary
+        - The Read.AI integration follows a multi-step process: meeting creation → meeting start event → Read.AI addition → report generation → webhook notification → report sharing
+        - Detailed logging at each step helps diagnose integration issues
+        - The integration requires specific environment variables: READ_AI_EMAIL, READ_AI_PASSWORD, READ_AI_REPORT_EMAIL
+      - link to source: https://github.com/trilogy-group/kb-builder/blob/main/src/services/readAiService.ts
+
+    - Source: Webhook Handler
+      - DOK1 - facts
+        - The application handles Google Meet webhook events via the /meet-webhook endpoint
+        - Read.AI webhook events are received via the /readai-webhook endpoint
+        - The conference.started event triggers the addition of Read.AI to the meeting
+        - The Read.AI webhook contains a session_id and report_url
+      - DOK2 - summary
+        - The webhook system bridges Google Meet and Read.AI, creating an automated flow
+        - Error handling and detailed logging are essential for troubleshooting webhook issues
+        - The system uses DynamoDB to track meeting sessions and recording artifacts
+      - link to source: https://github.com/trilogy-group/kb-builder/blob/main/src/functions/handlers.ts
+
+  - AWS CDK Deployment
+    - Source: CDK Stack
+      - DOK1 - facts
+        - The CDK stack creates a Lambda function, DynamoDB table, and necessary IAM permissions
+        - Environment variables are passed to the Lambda function during deployment
+        - The stack name and resource names include the environment name for isolation
+        - The LOG_LEVEL is explicitly set to DEBUG for the llima environment
+      - DOK2 - summary
+        - Environment-specific configurations should be hardcoded in the CDK stack when needed
+        - Using environment variables from the deployment machine can lead to inconsistencies
+        - The CDK stack provides a clean way to create environment-specific resources and configurations
+      - link to source: https://github.com/trilogy-group/kb-builder/blob/main/lib/meet-webhook-lambda-stack.ts

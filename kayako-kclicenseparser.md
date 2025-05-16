@@ -1,0 +1,74 @@
+```markdown
+- DOK3 - Insights
+  - The Kayako license parser uses a custom encryption/decryption mechanism based on Rijndael algorithm with specific block and key sizes
+  - License files are PHP files with embedded encrypted data in a specific format
+  - The license generation code in the Kayako backend uses the same encryption algorithm and key prefix as the parser
+  - Both the backend generator and the parser tool maintain compatibility with the same license format
+  - The license structure includes domains, expiry dates, customer information, and product details
+  - Timestamps in the license file use Unix timestamp format and are converted to datetime for display
+
+- DOK2 - Knowledge Tree
+  - License Parser Structure
+    - Source: Repository code analysis
+      - DOK1 - facts
+        - The parser is implemented in Python and uses phpserialize to handle PHP serialized data
+        - License files are PHP files with the license data embedded in comments
+        - The license data format is: [md5_data;md5_payload;extended_key;data]
+        - The parser can be used as a command-line tool via the kckeyparser command
+        - The tool supports both parsing existing license files and generating new ones
+      - DOK2 - summary
+        - The kckeyparser tool provides a simple way to decode Kayako Classic license files
+        - The parser extracts information like domains, expiry dates, and customer details
+        - License generation requires parameters like staff count, domains, package name, customer name, and expiry date
+      - link to source: https://github.com/trilogy-group/kayako-kclicenseparser
+  
+  - License Encryption
+    - Source: Crypto implementation
+      - DOK1 - facts
+        - Uses Rijndael encryption algorithm with KEY_SIZE=16 and BLOCK_SIZE=32
+        - A fixed prefix 'A376545AD82A8B695A60' is added to the encryption key
+        - The encrypted data is Base64 encoded
+        - The decryption process reverses these steps
+      - DOK2 - summary
+        - The encryption mechanism is designed to be compatible with the PHP implementation in Kayako Classic
+        - The system uses a combination of MD5 hashing and Rijndael encryption to secure license data
+      - link to source: https://github.com/trilogy-group/kayako-kclicenseparser/blob/master/kckeyparser/crypto.py
+
+  - License Data Structure
+    - Source: License implementation
+      - DOK1 - facts
+        - License data includes: uniqueid, product, licensedstaff, domains, package, fullname, organization, expiry, istrial, renewalduedateline
+        - Domains are stored as a list of allowed domains for the license
+        - Timestamps (expiry, renewalduedateline) are stored as Unix timestamps
+        - The license uniqueid is a UUID with dashes removed and converted to uppercase
+      - DOK2 - summary
+        - The license structure provides a comprehensive way to control access to Kayako products
+        - The multi-domain support allows customers to use the product across different domains
+        - The expiry system enables time-limited licenses and trial periods
+      - link to source: https://github.com/trilogy-group/kayako-kclicenseparser/blob/master/kckeyparser/License.py
+
+  - Command-line Usage
+    - Source: README and parser implementation
+      - DOK1 - facts
+        - To parse license files: `kckeyparser key.php <other_keys.php>`
+        - To generate a license: `kckeyparser --staff [max staff users] --domain [comma separated list of domains] --package [package name] --fullname [Name of the customer] --org [Name of the organization] --expiry [Timestamp] --action save <filename>`
+        - The tool is installed via setup.py as a console script
+      - DOK2 - summary
+        - The command-line interface provides a simple way to interact with Kayako license files
+        - The tool can be used in scripts for batch processing of license files
+      - link to source: https://github.com/trilogy-group/kayako-kclicenseparser/blob/master/README.md
+  
+  - License Generation in Kayako Backend
+    - Source: Kayako backend code
+      - DOK1 - facts
+        - License generation is handled by the `Novo\App\Backend\Library\License\Generator` class
+        - The generator uses the same encryption key prefix 'A376545AD82A8B695A60' as the parser
+        - License files are generated in the API controller for orders and trials
+        - The generator creates PHP files with the license data embedded in comments
+        - The license key format is: `<?php /* [md5_base64;md5_decrypted;extended_key;base64_data] */ ?>{uniqueID}`
+      - DOK2 - summary
+        - The backend license generator creates license files compatible with the parser
+        - The license generation is triggered through API endpoints for orders and trials
+        - The API endpoints allow agents to customize license parameters like seats, domains, and expiry dates
+      - link to source: https://github.com/trilogy-group/kayako-app-backend/blob/926ac3cc7e938f0b9fd8f3bf03387e7d9645a18d/library/License/Generator.php
+```
