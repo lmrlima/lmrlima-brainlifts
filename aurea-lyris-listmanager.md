@@ -32,3 +32,15 @@
       - DOK2 - summary
         - These configuration options provide flexibility for customers who may not want automatic holds
         - Rather than changing core bounce handling logic, these settings should be used to control unwanted holds
+  - Test Environment Setup
+    - Source: Internal documentation
+      - DOK1 - facts
+        - A test environment requires Windows with SQL Server with named pipes enabled
+        - Required ports must be opened as specified in the Lyris support article: https://lyris-lm-support.kayako.com/article/23035-ports-need-to-be-open-for-listmanager-to-work-correctly
+        - Installation requires the MSSQL debug option available at: https://drive.google.com/drive/folders/1OdWTJONMtLRJ_pPfuJYcxgUuNz59z4z1
+        - Access credentials are stored in: https://docs.google.com/spreadsheets/d/1NwrdcBnR5cFJ5tOfKnhWJ4L6hk06nZk4CCboXVTfHEA/edit?gid=914344336#gid=914344336
+        - Debugging should use the main codebase from: https://github.com/trilogy-group/aurea-lyris-listmanager
+      - DOK2 - summary
+        - The test environment setup process requires specific SQL Server configuration and network port settings
+        - Access to internal resources is needed for installation files and credentials
+        - Debugging is done against the main GitHub repository
